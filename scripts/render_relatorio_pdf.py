@@ -8,7 +8,7 @@ Estratégia:
 3. Usa Google Chrome headless para imprimir em PDF
 
 Saídas:
-- Contexto/artefatos_locais/reports/relatorio_tecnico_print.html
+- .render_tmp/reports/relatorio_tecnico_print.html
 - reports/relatorio_tecnico.pdf
 """
 
@@ -38,11 +38,12 @@ except ImportError as exc:  # pragma: no cover
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 REPORT_MD = PROJECT_ROOT / "reports" / "relatorio_tecnico.md"
-LOCAL_ARTIFACTS_DIR = PROJECT_ROOT / "Contexto" / "artefatos_locais" / "reports"
+LOCAL_ARTIFACTS_DIR = PROJECT_ROOT / ".render_tmp" / "reports"
 REPORT_HTML = LOCAL_ARTIFACTS_DIR / "relatorio_tecnico_print.html"
 REPORT_PDF = PROJECT_ROOT / "reports" / "relatorio_tecnico.pdf"
 LOGO_PATH = PROJECT_ROOT / "pd-ml-scikit-learning-main" / "images" / "logo_infnet.png"
 REPO_URL = "https://github.com/fabioffigueiredo/pd_operacionaliza-o_modelos-_mlops"
+VIDEO_DRIVE_URL = "https://drive.google.com/file/d/11Yn6D01kEwuc6N-__t40ZlxxyOoEa-uM/view?usp=sharing"
 
 
 def get_chrome_binary() -> str:
@@ -110,6 +111,12 @@ def build_summary_html() -> str:
       <div class="summary-block">
         <p class="summary-label">Link GitHub:</p>
         <p><a href="{html.escape(REPO_URL)}">{html.escape(REPO_URL)}</a></p>
+      </div>
+
+      <div class="summary-block">
+        <p class="summary-label">Vídeo de demonstração:</p>
+        <p>Arquivo local no repositório: <code>mlflow+streamlit_mlops.mp4</code></p>
+        <p>Backup Google Drive: <a href="{html.escape(VIDEO_DRIVE_URL)}">{html.escape(VIDEO_DRIVE_URL)}</a></p>
       </div>
 
       <div class="summary-block">

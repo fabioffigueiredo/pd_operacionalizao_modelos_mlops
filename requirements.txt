@@ -1,4 +1,5 @@
 # PD2 MLOps — Instituto Infnet
+# Dependências do fluxo ativo do PD2
 # Python >= 3.11
 
 # Core ML
@@ -15,12 +16,7 @@ mlflow>=2.10.0
 streamlit>=1.32.0
 plotly>=5.20.0
 
-# Configuração
+# Configuração e renderização do relatório
 pyyaml>=6.0.0
 Markdown>=3.9
 pypdf>=5.0.0
-
-# Jupyter (exploração e visualização — opcional)
-jupyter>=1.0.0
-matplotlib>=3.8.0
-seaborn>=0.13.0

@@ -45,6 +45,8 @@ Este projeto parte do trabalho anterior em:
 
 No PD1, o foco foi comparar modelos supervisionados em notebook. No PD2, a entrega evolui para um sistema modular com `train.py`, configuração centralizada, rastreabilidade no `MLflow` e interface de inferência em `Streamlit`.
 
+Se você quiser reproduzir apenas o material legado em notebook do PD1, use as dependências próprias em [pd-ml-scikit-learning-main/requirements.txt](pd-ml-scikit-learning-main/requirements.txt). O `requirements.txt` da raiz cobre o fluxo ativo do PD2.
+
 ---
 
 ## Estrutura do Repositório
@@ -55,12 +57,9 @@ PD 2 MLops/
 │   └── app.py
 ├── config/
 │   └── pipeline.yaml
-├── Contexto/
-│   ├── Contexto PD 2 Operacionalização de Modelos com MLOps.md
-│   ├── analise_pd2.md
-│   └── artefatos_locais/        # apoio local e rascunhos, fora do GitHub
 ├── data/
 │   └── raw/
+├── mlflow+streamlit_mlops.mp4
 ├── models/
 ├── pd-ml-scikit-learning-main/
 ├── reports/
@@ -150,6 +149,9 @@ O `Streamlit` lê o `run_id` campeão salvo e carrega o modelo correspondente do
 - Quatro experimentos comparativos rastreados no `MLflow`
 - Modelo campeão persistido e reaproveitado na inferência
 - Interface `Streamlit` para simulação de operação
+- Vídeo de demonstração:
+  - [Arquivo no repositório](mlflow+streamlit_mlops.mp4)
+  - [Backup no Google Drive](https://drive.google.com/file/d/11Yn6D01kEwuc6N-__t40ZlxxyOoEa-uM/view?usp=sharing)
 - Relatório técnico em Markdown e PDF:
   - [Relatório Técnico em PDF](reports/relatorio_tecnico.pdf)
   - [Relatório Técnico em Markdown](reports/relatorio_tecnico.md)
@@ -158,8 +160,8 @@ O `Streamlit` lê o `run_id` campeão salvo e carrega o modelo correspondente do
 
 ## Observações Sobre Versionamento
 
-- Artefatos locais de treino, logs, vídeos e rascunhos foram isolados para não poluir o repositório.
-- O que não precisa ir para o GitHub fica em `Contexto/artefatos_locais/` e está ignorado no `.gitignore`.
+- Artefatos temporários de treino, logs e arquivos de renderização local ficam fora do Git.
+- O HTML intermediário do PDF é gerado em `.render_tmp/`, que está ignorado no `.gitignore`.
 
 ---
 

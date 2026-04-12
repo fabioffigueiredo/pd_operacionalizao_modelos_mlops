@@ -224,6 +224,10 @@ O aplicativo Streamlit (`app/app.py`) carrega o modelo via `mlflow.sklearn.load_
 
 O carregamento usa `@st.cache_resource` para carregar o modelo uma única vez por sessão do servidor, independentemente do número de usuários simultâneos.
 
+**Vídeo de demonstração da operação simulada:**
+- Arquivo versionado no repositório: [`mlflow+streamlit_mlops.mp4`](../mlflow+streamlit_mlops.mp4)
+- Backup no Google Drive: <https://drive.google.com/file/d/11Yn6D01kEwuc6N-__t40ZlxxyOoEa-uM/view?usp=sharing>
+
 ### 4.3 Impacto de Negócio dos Tipos de Erro
 
 | Tipo de Erro | Predição | Realidade | Impacto |
