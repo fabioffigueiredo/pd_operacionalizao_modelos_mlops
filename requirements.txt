@@ -17,6 +17,8 @@ plotly>=5.20.0
 
 # Configuração
 pyyaml>=6.0.0
+Markdown>=3.9
+pypdf>=5.0.0
 
 # Jupyter (exploração e visualização — opcional)
 jupyter>=1.0.0

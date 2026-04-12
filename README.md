@@ -1,165 +1,168 @@
-# PD2 MLOps — Operacionalização de Modelos com MLflow e Streamlit
+<div align="center">
+  <h1>
+    <img src="pd-ml-scikit-learning-main/images/logo_infnet.png" alt="Instituto Infnet" width="80" title="Instituto Infnet" align="absmiddle"/>
+    Projeto de Disciplina: Operacionalização de Modelos com MLOps
+  </h1>
+</div>
 
-**Instituto Infnet | Pós-Graduação em Machine Learning, Deep Learning e IA**
-**Disciplina:** Operacionalização de Modelos com MLOps
-**Aluno:** Fabio Ferreira Figueiredo
-**Baseado em:** [PD1 — Fundamentos de ML com Scikit-Learn](https://github.com/fabioffigueiredo/pd-ml-scikit-learning)
+<div align="center">
+
+  **Pós-Graduação em Machine Learning, Deep Learning e Inteligência Artificial**<br>
+  **Disciplina:** Operacionalização de Modelos com MLOps<br>
+  **Professor:** Ícaro Augusto Maccari Zelioli<br>
+  **Aluno:** Fabio Ferreira Figueiredo <a href="https://github.com/fabioffigueiredo"><img src="https://img.shields.io/badge/GitHub-perfil-black?logo=github" alt="GitHub"></a>
+
+  <p>
+    <img src="https://img.shields.io/badge/python-3.11%2B-blue?style=flat-square&logo=python&logoColor=white" alt="Python">
+    <img src="https://img.shields.io/badge/scikit--learn-1.4%2B-orange?style=flat-square&logo=scikitlearn&logoColor=white" alt="Scikit-Learn">
+    <img src="https://img.shields.io/badge/MLflow-experiment%20tracking-0194E2?style=flat-square" alt="MLflow">
+    <img src="https://img.shields.io/badge/Streamlit-infer%C3%AAncia-FF4B4B?style=flat-square&logo=streamlit&logoColor=white" alt="Streamlit">
+  </p>
+</div>
 
 ---
 
-## Problema de Negócio
+## Visão Geral do Projeto
 
-Avaliar o risco de crédito de solicitantes prevendo **inadimplência severa** (`SeriousDlqin2yrs`), usando o dataset [Give Me Some Credit](https://www.kaggle.com/datasets/brycecf/give-me-some-credit-dataset) — 150.000 registros com classe positiva de ~6.7%.
+Este repositório representa o **PD2** da disciplina, transformando o trabalho exploratório do PD1 em um fluxo mais próximo de engenharia de machine learning: código modular, rastreamento de experimentos com `MLflow`, seleção de modelo campeão e inferência via `Streamlit`.
+
+O problema continua sendo o mesmo: prever **inadimplência severa** (`SeriousDlqin2yrs`) no dataset **Give Me Some Credit**, com aproximadamente 150 mil registros e classe positiva em torno de 6,7%.
+
+O foco desta etapa não está apenas em métrica, mas em demonstrar:
+- estrutura de projeto adequada à prática de engenharia
+- pipeline de dados e features com decisões explícitas
+- experimentos reprodutíveis e rastreáveis
+- operacionalização com inferência e visão de monitoramento
 
 ---
 
-## Estrutura do Projeto
+## Relação com o PD1
 
-```
+Este projeto parte do trabalho anterior em:
+
+- [PD1 — Fundamentos de ML com Scikit-Learn](https://github.com/fabioffigueiredo/pd-ml-scikit-learning)
+- Material legado local em [pd-ml-scikit-learning-main](pd-ml-scikit-learning-main)
+
+No PD1, o foco foi comparar modelos supervisionados em notebook. No PD2, a entrega evolui para um sistema modular com `train.py`, configuração centralizada, rastreabilidade no `MLflow` e interface de inferência em `Streamlit`.
+
+---
+
+## Estrutura do Repositório
+
+```text
 PD 2 MLops/
-├── config/
-│   └── pipeline.yaml           # Hiperparâmetros e paths centralizados
-├── src/
-│   ├── data_processing.py      # Ingestão, outlier capping, preprocessor
-│   └── train.py                # 4 experimentos MLflow
 ├── app/
-│   └── app.py                  # Interface Streamlit
+│   └── app.py
+├── config/
+│   └── pipeline.yaml
+├── Contexto/
+│   ├── Contexto PD 2 Operacionalização de Modelos com MLOps.md
+│   ├── analise_pd2.md
+│   └── artefatos_locais/        # apoio local e rascunhos, fora do GitHub
 ├── data/
 │   └── raw/
-│       └── cs-training.csv     # Dataset (copiar manualmente)
 ├── models/
-│   └── champion_run_id.txt     # Gerado pelo train.py
-├── mlruns/                     # Gerado pelo MLflow
+├── pd-ml-scikit-learning-main/
 ├── reports/
-│   └── relatorio_tecnico.md   # Relatório final
+│   ├── relatorio_tecnico.md
+│   └── relatorio_tecnico.pdf
+├── scripts/
+│   └── render_relatorio_pdf.py
+├── src/
+│   ├── data_processing.py
+│   └── train.py
 ├── requirements.txt
 └── README.md
 ```
 
 ---
 
-## Pré-requisitos
+## Resultados Principais
 
-- Python 3.11+
-- Dataset `cs-training.csv` do Kaggle (Give Me Some Credit)
+| Experimento | Redução | F1-Score | ROC-AUC | Observação |
+|---|---|---:|---:|---|
+| `RF_com_PCA` | PCA (9 componentes) | **0.4354** | 0.8555 | Campeão factual carregado no app |
+| `RF_sem_reducao_baseline` | Nenhuma | 0.4308 | **0.8572** | Melhor interpretabilidade |
+| `RF_com_LDA` | LDA (1 componente) | 0.3494 | 0.8156 | Perda forte de informação |
+| `DT_sem_reducao_baseline` | Nenhuma | 0.3408 | 0.8544 | Regras auditáveis, menor F1 |
+
+**Leitura de engenharia:** o `RF + PCA` venceu pela métrica primária, mas o `RF baseline` continua tecnicamente defensável quando a prioridade é interpretabilidade em contexto regulado.
 
 ---
 
-## Setup
+## Como Executar o Projeto Localmente
+
+### 1. Pré-requisitos
+
+- Python `3.11+`
+- Dataset `cs-training.csv`
+
+### 2. Criar ambiente e instalar dependências
 
 ```bash
-# 1. Criar e ativar ambiente virtual
 python3.11 -m venv venv
-source venv/bin/activate        # Linux/macOS
-# venv\Scripts\activate         # Windows
-
-# 2. Instalar dependências
+source venv/bin/activate
 pip install -r requirements.txt
+```
 
-# 3. Copiar dataset para o local esperado
+### 3. Disponibilizar o dataset
+
+```bash
 mkdir -p data/raw
 cp /caminho/para/cs-training.csv data/raw/
-# Ou, se veio do PD1:
+```
+
+Se quiser reutilizar a base do PD1:
+
+```bash
 cp pd-ml-scikit-learning-main/archive/cs-training.csv data/raw/
 ```
 
----
-
-## Executar Treinamento (4 Experimentos MLflow)
+### 4. Rodar o treinamento
 
 ```bash
-# Rodar do diretório raiz do projeto
 python src/train.py
 ```
 
-O script executará os seguintes experimentos em sequência:
+Ao final, o projeto salva automaticamente o `run_id` do campeão em `models/champion_run_id.txt`.
 
-| Experimento | Modelo | Redução Dimensional |
-|-------------|--------|---------------------|
-| `RF_sem_reducao_baseline` | Random Forest | Nenhuma |
-| `RF_com_PCA` | Random Forest | PCA (95% variância) |
-| `RF_com_LDA` | Random Forest | LDA (1 componente) |
-| `DT_sem_reducao_baseline` | Decision Tree | Nenhuma |
-
-**Tempo estimado:** 40–80 minutos (GridSearchCV com validação cruzada 5-fold).
-
-Ao concluir, o `run_id` do modelo campeão é salvo automaticamente em `models/champion_run_id.txt`.
-
----
-
-## Visualizar Experimentos no MLflow UI
+### 5. Abrir o MLflow
 
 ```bash
 mlflow ui
 ```
 
-Acesse `http://localhost:5000` no navegador para comparar:
-- Parâmetros de cada experimento
-- Métricas (F1-Score, ROC-AUC, tempo de treino)
-- Artefatos dos modelos treinados
+Depois, acesse `http://127.0.0.1:5000`.
 
----
-
-## Executar a Interface Streamlit
+### 6. Abrir a interface de inferência
 
 ```bash
 streamlit run app/app.py
 ```
 
-O app carrega o modelo campeão automaticamente via `models/champion_run_id.txt`.
-
-Para forçar um modelo específico (ex: o com PCA):
-
-```bash
-MODEL_URI=runs:/<run_id>/model streamlit run app/app.py
-```
+O `Streamlit` lê o `run_id` campeão salvo e carrega o modelo correspondente do `MLflow`.
 
 ---
 
-## Experimentos MLflow — Descrição Técnica
+## O Que Foi Entregue
 
-### Experimento 1: RF Baseline (sem redução)
-Random Forest com `class_weight="balanced"`, GridSearchCV 5-fold, otimizando F1-Score.
-Serve como referência: com apenas 10 features, não há maldição da dimensionalidade.
-
-### Experimento 2: RF + PCA
-`PCA(n_components=0.95)` — sklearn seleciona automaticamente o número mínimo de componentes
-para explicar 95% da variância. Com correlações entre as features de atraso (30-59, 60-89, 90+
-dias), esperam-se ~7-8 componentes.
-
-**Trade-off:** reduz ruído potencial, mas perde interpretabilidade das features originais
-(relevante para LGPD Art. 20 e resoluções BACEN).
-
-### Experimento 3: RF + LDA
-`LDA(n_components=1)` — limitação matemática de classificação binária: máximo de
-`min(n_classes - 1, n_features) = 1` componente discriminante. Todo o espaço de 10
-dimensões é projetado em 1 único eixo. Espera-se queda no F1 vs. baseline.
-
-**Vantagem:** LDA é supervisionado — o componente maximiza a separabilidade entre classes.
-
-### Experimento 4: Decision Tree Baseline
-Comparação com árore de decisão regularizada (GridSearchCV). Permite discutir o
-trade-off entre interpretabilidade total (regras auditáveis) e performance do ensemble.
+- Repositório modularizado, reduzindo dependência de notebook
+- Quatro experimentos comparativos rastreados no `MLflow`
+- Modelo campeão persistido e reaproveitado na inferência
+- Interface `Streamlit` para simulação de operação
+- Relatório técnico em Markdown e PDF:
+  - [Relatório Técnico em PDF](reports/relatorio_tecnico.pdf)
+  - [Relatório Técnico em Markdown](reports/relatorio_tecnico.md)
 
 ---
 
-## Decisões de Qualidade de Dados
+## Observações Sobre Versionamento
 
-| Problema | Tratamento | Justificativa |
-|----------|------------|---------------|
-| `MonthlyIncome` ausente (~20%) | `SimpleImputer(strategy='median')` | Mediana robusta a outliers |
-| `NumberOfDependents` ausente (~2.5%) | `SimpleImputer(strategy='median')` | Distribuição assimétrica |
-| `DebtRatio` outliers (valores > 1000) | Capping no percentil 99 | Erros de dados / casos extremos |
-| `RevolvingUtilizationOfUnsecuredLines` outliers | Capping no percentil 99 | Valores fisicamente impossíveis |
-| Classe positiva ~6.7% (desbalanceada) | `class_weight="balanced"` | Preserva recall da classe minoritária |
+- Artefatos locais de treino, logs, vídeos e rascunhos foram isolados para não poluir o repositório.
+- O que não precisa ir para o GitHub fica em `Contexto/artefatos_locais/` e está ignorado no `.gitignore`.
 
 ---
 
-## Métricas Técnicas e de Negócio
-
-| Métrica | Tipo | Relevância |
-|---------|------|------------|
-| F1-Score | Técnica | Balanceia precision e recall — ideal para classes desbalanceadas |
-| ROC-AUC | Técnica | Capacidade discriminativa independente do threshold |
-| Falso Negativo (FN) | Negócio | Aprovação de cliente que vai inadimplir → prejuízo financeiro |
-| Falso Positivo (FP) | Negócio | Reprovação de bom pagador → perda de receita, risco reputacional |
+<div align="center">
+  <small>Desenvolvido para fins acadêmicos e de demonstração técnica.<br>Abril / 2026</small>
+</div>

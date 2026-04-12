@@ -205,7 +205,7 @@ def experimento_rf_baseline(X_train, X_test, y_train, y_test, features, cfg):
     """
     Experimento 1: Random Forest sem redução de dimensionalidade.
 
-    Este é o modelo baseline e espera-se que seja o campeão, pois:
+    Este é o baseline principal de comparação, pois:
     - 10 features não sofrem com maldição da dimensionalidade
     - RF é robusto e não requer dados normalizados (StandardScaler é aplicado
       apenas por consistência com os experimentos que usam PCA/LDA)

@@ -27,6 +27,8 @@ data/raw/
 mlruns/
 logs/
 models/champion_run_id.txt
+output/
+Contexto/artefatos_locais/
 
 # Local tool state
 .claude/settings.local.json

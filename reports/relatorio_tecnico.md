@@ -8,7 +8,9 @@
 
 ---
 
-## 1. Introdução e Mudança de Paradigma
+## 1. Competência 1 — Estruturação do Projeto, Contexto e Entrega
+
+### 1.1 Introdução e Mudança de Paradigma
 
 O PD1 focou na experimentação isolada de modelos dentro de um Jupyter Notebook, comparando algoritmos (Perceptron, Árvore de Decisão, Random Forest) para o problema de credit scoring. O PD2 representa uma mudança fundamental de perspectiva: do cientista de dados que experimenta para o **engenheiro de ML que opera sistemas**.
 
@@ -16,11 +18,13 @@ O foco deixa de ser "qual modelo tem o melhor F1?" e passa a ser: como construir
 
 Esta transição exigiu a reestruturação completa do código em módulos Python independentes, a integração com MLflow para rastreamento de experimentos, a comparação sistemática de técnicas de redução de dimensionalidade, e o deploy do modelo via Streamlit.
 
----
+**Objetivo técnico:** construir um pipeline reproduzível para previsão de `SeriousDlqin2yrs`, com separação clara entre preparo de dados, treinamento, rastreamento experimental e inferência.
 
-## 2. Reestruturação do Código: Do Notebook ao Sistema Modular
+**Métricas de negócio associadas:** reduzir o risco de **falsos negativos** (aprovar quem tende a inadimplir), sem ignorar o custo de **falsos positivos** (recusar bons pagadores), respeitando o contexto regulatório de crédito.
 
-### 2.1 Problemas do Notebook
+### 1.2 Reestruturação do Código: Do Notebook ao Sistema Modular
+
+#### 1.2.1 Problemas do Notebook
 
 O notebook `projeto_credito_supervisionado.ipynb` (2.094 linhas, 498 KB) apresentava problemas típicos para operacionalização:
 
@@ -30,7 +34,7 @@ O notebook `projeto_credito_supervisionado.ipynb` (2.094 linhas, 498 KB) apresen
 - **Sem versionamento de lógica:** mudanças no pré-processamento ou hiperparâmetros não eram rastreadas
 - **Impossibilidade de integração:** nenhum script externo podia importar funções do notebook
 
-### 2.2 Arquitetura Modular Adotada
+#### 1.2.2 Arquitetura Modular Adotada
 
 ```
 src/
@@ -44,7 +48,7 @@ app/
 
 **Princípio central adotado:** cada módulo tem uma única responsabilidade e pode ser testado independentemente. O `data_processing.py` pode ser importado tanto pelo `train.py` quanto por um script de inferência batch, sem copiar código.
 
-### 2.3 Configuração Centralizada
+#### 1.2.3 Configuração Centralizada
 
 O arquivo `config/pipeline.yaml` elimina os "magic numbers" espalhados pelo código. Hiperparâmetros, paths, e configurações de validação cruzada estão em um único lugar. Isso permite:
 - Reproduzir experimentos com configurações diferentes sem editar código
@@ -53,9 +57,11 @@ O arquivo `config/pipeline.yaml` elimina os "magic numbers" espalhados pelo cód
 
 ---
 
-## 3. Qualidade de Dados e Tratamento
+## 2. Competência 2 — Pipelines de Dados, Features e Redução de Dimensionalidade
 
-### 3.1 Diagnóstico de Problemas
+### 2.1 Qualidade de Dados e Tratamento
+
+#### 2.1.1 Diagnóstico de Problemas
 
 A análise exploratória do PD1 identificou dois tipos principais de problemas:
 
@@ -66,7 +72,7 @@ A análise exploratória do PD1 identificou dois tipos principais de problemas:
 | `DebtRatio` | Outliers absurdos (> 1000) | < 1% dos registros |
 | `RevolvingUtilizationOfUnsecuredLines` | Outliers (> 1.0 impossível fisicamente) | < 1% dos registros |
 
-### 3.2 Estratégia de Tratamento: Outliers por Capping
+#### 2.1.2 Estratégia de Tratamento: Outliers por Capping
 
 **Decisão técnica:** Capping no percentil 99 para `DebtRatio` e `RevolvingUtilizationOfUnsecuredLines`.
 
@@ -77,7 +83,7 @@ A análise exploratória do PD1 identificou dois tipos principais de problemas:
 
 **Limitação documentada:** O percentil 99 foi calculado no dataset completo antes do `train_test_split`. Em produção, o threshold deveria ser calculado exclusivamente no conjunto de treino e armazenado como parâmetro do pipeline. Esta simplificação é aceitável no contexto acadêmico e está documentada no código.
 
-### 3.3 Estratégia de Tratamento: Valores Ausentes
+#### 2.1.3 Estratégia de Tratamento: Valores Ausentes
 
 **Decisão técnica:** `SimpleImputer(strategy='median')` dentro do sklearn Pipeline.
 
@@ -86,25 +92,25 @@ A análise exploratória do PD1 identificou dois tipos principais de problemas:
 - Imputação dentro do Pipeline garante que a mediana é calculada APENAS no conjunto de treino e aplicada ao conjunto de teste — evitando data leakage.
 - A alternativa (remoção de linhas com NaN) eliminaria ~30.000 registros (~20% do dataset), reduzindo severamente a representatividade da amostra.
 
-### 3.4 Impacto na Generalização
+#### 2.1.4 Impacto na Generalização
 
 A presença de 20% de valores ausentes em `MonthlyIncome` representa um risco estrutural: se a ausência de renda estiver correlacionada com o comportamento de pagamento (hipótese plausível — clientes sem renda declarada podem ser mais propensos à inadimplência), a imputação pela mediana introduz um viés. Esta limitação é irresolvível pelos dados disponíveis e deve ser documentada para o time de negócio.
 
 ---
 
-## 4. Redução de Dimensionalidade: Análise Comparativa
+### 2.2 Redução de Dimensionalidade: Análise Comparativa
 
-### 4.1 Motivação e Contexto
+#### 2.2.1 Motivação e Contexto
 
 Com apenas 10 features e 150.000 registros, este dataset não sofre da maldição da dimensionalidade. A aplicação de redução de dimensionalidade serve aqui como experimento comparativo explícito, conforme exigido pela rubrica do PD2, não como necessidade técnica primária.
 
 Foram testadas duas técnicas com características complementares: **PCA** (não supervisionada, baseada em variância) e **LDA** (supervisionada, baseada em separabilidade de classes).
 
-### 4.2 PCA — Análise de Componentes Principais
+#### 2.2.2 PCA — Análise de Componentes Principais
 
 **Configuração:** `PCA(n_components=0.95)` — sklearn seleciona automaticamente o número mínimo de componentes que explicam ≥ 95% da variância total.
 
-**Resultado esperado:** ~7-8 componentes (as features de atraso — 30-59, 60-89, 90+ dias — são altamente correlacionadas e devem ser capturadas por poucos componentes).
+**Resultado observado:** 9 componentes para atingir 95% da variância explicada. Isso confirma que, apesar de correlações entre as features de atraso, o espaço de features preserva informação relativamente distribuída entre múltiplas dimensões.
 
 **Impacto no F1-Score:** Espera-se desempenho similar ao baseline ou ligeiramente inferior, pois a compressão de 10 para ~8 dimensões é modesta e o RF é robusto a correlações.
 
@@ -112,7 +118,7 @@ Foram testadas duas técnicas com características complementares: **PCA** (não
 
 **Conclusão sobre PCA:** Tecnicamente viável como compressão, mas problemático do ponto de vista regulatório para um sistema de crédito no contexto brasileiro.
 
-### 4.3 LDA — Análise Discriminante Linear
+#### 2.2.3 LDA — Análise Discriminante Linear
 
 **Configuração:** `LDA(n_components=1)`.
 
@@ -124,7 +130,7 @@ Foram testadas duas técnicas com características complementares: **PCA** (não
 
 **Conclusão sobre LDA:** Inapropriado para este problema na forma univariada. Útil como análise exploratória (visualização 1D da separabilidade das classes), mas não como etapa de pré-processamento para produção.
 
-### 4.4 Comparativo: Com vs. Sem Redução
+#### 2.2.4 Comparativo: Com vs. Sem Redução
 
 | Experimento | Redução | F1-Score (teste) | ROC-AUC | Interpretabilidade | Treino |
 |-------------|---------|-----------------|---------|-------------------|--------|
@@ -140,9 +146,35 @@ São necessários **9 de 10 componentes** para atingir 95% da variância — evi
 
 ---
 
-## 5. Seleção e Justificativa do Modelo Campeão
+## 3. Competência 3 — Experimentos Reprodutíveis com MLflow
 
-### 5.1 Critérios de Seleção
+### 3.1 Planejamento Experimental
+
+Foram definidos quatro experimentos comparativos com a mesma base de treino/teste e a mesma métrica primária (`F1-Score`), para isolar o impacto da redução de dimensionalidade e comparar custo, desempenho e interpretabilidade:
+
+| Experimento | Objetivo |
+|---|---|
+| `RF_sem_reducao_baseline` | baseline forte sem compressão de features |
+| `RF_com_PCA` | testar compressão não supervisionada com preservação de variância |
+| `RF_com_LDA` | testar redução supervisionada em classificação binária |
+| `DT_sem_reducao_baseline` | comparar ensemble vs. modelo altamente auditável |
+
+Todos os experimentos foram executados com validação cruzada estratificada, `GridSearchCV` e rastreamento no MLflow.
+
+### 3.2 Rastreamento e Reprodutibilidade com MLflow
+
+O `train.py` registra, em cada run:
+
+- hiperparâmetros efetivos do modelo
+- métricas de validação cruzada e holdout
+- tempo de treino
+- artefato serializado do pipeline treinado
+
+Esse desenho garante que a seleção do campeão não dependa de memória operacional ou execução manual dispersa: cada decisão fica associada a um `run_id` recuperável e auditável.
+
+### 3.3 Seleção e Justificativa do Modelo Campeão
+
+#### 3.3.1 Critérios de Seleção
 
 A escolha do modelo campeão considerou quatro dimensões:
 
@@ -151,19 +183,19 @@ A escolha do modelo campeão considerou quatro dimensões:
 3. **Interpretabilidade:** capacidade de explicar predições individuais
 4. **Viabilidade em produção:** compatibilidade com requisitos regulatórios
 
-### 5.2 Justificativa Técnica
+#### 3.3.2 Justificativa Técnica
 
-O **Random Forest sem redução de dimensionalidade** é o modelo campeão esperado pelos seguintes motivos:
+O **Random Forest com PCA (9 componentes)** foi o modelo campeão factual deste ciclo experimental. Ele obteve o maior F1-Score no holdout (`0.4354`) e, por isso, foi a run persistida no MLflow e operacionalizada no Streamlit por meio do `run_id` salvo em `models/champion_run_id.txt`.
 
-**F1-Score superior:** O ensemble de árvores captura interações não-lineares entre features (ex: a combinação de `NumberOfTimes90DaysLate > 0` com `RevolvingUtilizationOfUnsecuredLines > 0.8` é mais informativa que cada feature isolada). A Árvore de Decisão individual sofre mais com overfitting, enquanto PCA e LDA perdem informação no processo de redução.
+**Melhor desempenho na métrica primária:** Pelo critério definido para seleção do campeão, o `RF + PCA` superou o `RF baseline` por pequena margem absoluta (`0.4354` vs. `0.4308` em F1). Como o objetivo da comparação experimental era maximizar a métrica primária mantendo o pipeline reproduzível, esta foi a escolha adotada para a demonstração funcional.
 
-**`class_weight="balanced"`:** O dataset tem 6.7% de inadimplentes. Sem compensação, qualquer modelo tenderia a prever "adimplente" sempre (acurácia de 93.3%). O balanceamento ponderado garante que erros na classe positiva (inadimplente) sejam penalizados proporcionalmente à sua raridade.
+**Trade-off explícito de interpretabilidade:** O ganho de performance veio acompanhado de perda de explicabilidade direta. Após o PCA, as importâncias do Random Forest passam a refletir componentes latentes, e não mais as features originais. Em um contexto regulado de crédito, esse é um custo real e precisa ser reconhecido tecnicamente.
 
-**Interpretabilidade relativa:** O RF oferece `feature_importances_` (MDI — Mean Decrease Impurity), identificando que `RevolvingUtilizationOfUnsecuredLines` e `NumberOfTimes90DaysLate` são os principais preditores. Isso permite auditorias parciais exigidas pelo BACEN, mesmo sem a transparência total de uma Árvore de Decisão.
+**Custo computacional ainda aceitável:** O experimento com PCA treinou em `24.7 min`, contra `19.4 min` do baseline sem redução. Há aumento de custo, mas ele permanece aceitável para um fluxo acadêmico e para ciclos controlados de re-treino offline.
 
-**Estabilidade:** A validação cruzada 5-fold estratificada demonstra que o F1 do RF é mais estável entre folds (menor coeficiente de variação) que a Árvore de Decisão, indicando menor dependência da composição específica de treino/teste.
+**Decisão de engenharia, não apenas de métrica:** Embora o campeão factual deste projeto seja `RF + PCA`, o `RF baseline` segue como forte desafiante por combinar F1 muito próximo, ROC-AUC ligeiramente superior (`0.8572` vs. `0.8555`) e interpretabilidade melhor. Em produção regulada, essa alternativa continuaria plenamente defensável caso a prioridade passasse de performance marginal para auditoria e transparência.
 
-### 5.3 Comparação com o PD1
+#### 3.3.3 Comparação com o PD1
 
 O modelo campeão do PD1 obteve F1-Score de 0.4328. O PD2 não apenas reproduziu esse valor (RF baseline: 0.4308, diferença de apenas 0.002) como o **superou levemente com RF+PCA: F1=0.4354**. A diferença mínima do baseline é esperada — o split treino/teste do PD2 usa `stratify=y` com `random_state=42`, e o capping adicional de outliers (MonthlyIncome, features de atraso com sentinela 98) muda levemente a distribuição dos dados.
 
@@ -171,9 +203,9 @@ A vantagem do PD2 sobre o PD1 não está no F1-Score, mas na **rastreabilidade**
 
 ---
 
-## 6. Operacionalização: Fluxo de Inferência
+## 4. Competência 4 — Operacionalização, Inferência e Monitoramento
 
-### 6.1 Persistência e Versionamento
+### 4.1 Persistência e Versionamento
 
 O modelo campeão é persistido via `mlflow.sklearn.log_model()` como artefato da run MLflow. Esta abordagem garante:
 
@@ -181,7 +213,7 @@ O modelo campeão é persistido via `mlflow.sklearn.log_model()` como artefato d
 - **Reprodutibilidade:** o MLflow registra a versão do sklearn e metadados do ambiente de execução
 - **Versionamento:** múltiplas versões do modelo coexistem no `mlruns/`, identificadas por `run_id`
 
-### 6.2 Interface de Inferência (Streamlit)
+### 4.2 Interface de Inferência (Streamlit)
 
 O aplicativo Streamlit (`app/app.py`) carrega o modelo via `mlflow.sklearn.load_model(model_uri)` e expõe uma interface web com:
 
@@ -192,11 +224,7 @@ O aplicativo Streamlit (`app/app.py`) carrega o modelo via `mlflow.sklearn.load_
 
 O carregamento usa `@st.cache_resource` para carregar o modelo uma única vez por sessão do servidor, independentemente do número de usuários simultâneos.
 
----
-
-## 7. Métricas de Negócio e Monitoramento
-
-### 7.1 Impacto de Negócio dos Tipos de Erro
+### 4.3 Impacto de Negócio dos Tipos de Erro
 
 | Tipo de Erro | Predição | Realidade | Impacto |
 |--------------|----------|-----------|---------|
@@ -205,7 +233,7 @@ O carregamento usa `@st.cache_resource` para carregar o modelo uma única vez po
 
 **Assimetria de custo:** Em crédito, o Falso Negativo tipicamente tem custo maior que o Falso Positivo. O F1-Score trata os dois igualmente — em produção, seria apropriado ponderar pelo custo relativo de cada erro e ajustar o threshold de decisão da probabilidade (padrão: 0.5).
 
-### 7.2 Métricas Técnicas Monitoradas
+### 4.4 Métricas Técnicas Monitoradas
 
 | Métrica | Propósito | Alerta |
 |---------|-----------|--------|
@@ -214,7 +242,7 @@ O carregamento usa `@st.cache_resource` para carregar o modelo uma única vez po
 | Taxa de inadimplência prevista | Sanidade do modelo | Desvio > 20% da média histórica |
 | Latência de inferência | Performance operacional | P99 > 500ms |
 
-### 7.3 Detecção de Data Drift
+### 4.5 Detecção de Data Drift
 
 Data drift ocorre quando a distribuição das features de entrada em produção diverge da distribuição do conjunto de treino, degradando a performance sem que o modelo "saiba" disso.
 
@@ -234,7 +262,7 @@ Data drift ocorre quando a distribuição das features de entrada em produção 
 2. F1-Score em produção < 0.35 por duas semanas consecutivas
 3. Mudanças macroeconômicas significativas (ex: mudança da taxa Selic, crises econômicas)
 
-### 7.4 Estratégia de Re-treino Contínuo
+### 4.6 Estratégia de Re-treino Contínuo
 
 O MLflow facilita o re-treino controlado: cada ciclo de re-treino cria novos `run_id`s que permitem comparar a versão nova com a versão em produção antes de fazer o swap. O fluxo recomendado:
 
@@ -247,19 +275,19 @@ Reiniciar Streamlit
 
 ---
 
-## 8. Conclusões
+## 5. Conclusões
 
-### 8.1 O que Este Projeto Demonstrou
+### 5.1 O que Este Projeto Demonstrou
 
 1. **A transição do notebook para sistema modular é uma mudança de mindset**, não apenas de formato. Módulos separados forçam a explicitação de interfaces, contratos e responsabilidades que o notebook escondia.
 
-2. **Redução de dimensionalidade não é sempre benéfica.** Com 10 features e 150.000 registros, PCA e LDA introduzem mais problemas (interpretabilidade, perda de informação) do que resolvem. A decisão de não usar redução é justificada por evidência experimental, não por omissão.
+2. **Redução de dimensionalidade exige análise de trade-off, não adesão automática.** Com 10 features e 150.000 registros, o LDA degradou fortemente o desempenho e o PCA trouxe ganho marginal de F1 ao custo de interpretabilidade. A evidência experimental mostra que performance isolada e auditabilidade podem apontar para escolhas diferentes.
 
 3. **Rastreamento é infraestrutura, não burocracia.** O MLflow elimina a pergunta "qual versão do modelo está em produção?" — a resposta está sempre no `run_id` registrado, com todos os parâmetros e métricas associados.
 
 4. **Deploy não é o fim do ciclo de ML, é o começo.** O sistema de monitoramento proposto (PSI, KS-test, F1 em produção) fecha o loop entre dados, modelo e negócio — tornando o sistema verdadeiramente operacional.
 
-### 8.2 Próximos Passos Sugeridos
+### 5.2 Próximos Passos Sugeridos
 
 - Implementar pipeline de monitoramento automatizado com alertas (ex: via Airflow ou scheduled job)
 - Explorar modelos com maior interpretabilidade nativa (ex: LGBM com explicações SHAP)
