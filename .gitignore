@@ -1,0 +1,36 @@
+# Python virtual environments
+credito/
+.venv/
+venv/
+env/
+ENV/
+
+# Python caches and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+
+# OS-generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+
+# Project-local generated artifacts
+data/raw/
+mlruns/
+logs/
+models/champion_run_id.txt
+
+# Local tool state
+.claude/settings.local.json
+
+# Temporary local databases
+*.sqlite
+*.db
