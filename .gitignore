@@ -30,9 +30,6 @@ models/champion_run_id.txt
 output/
 .render_tmp/
 
-# Local tool state
-.claude/settings.local.json
-
 # Temporary local databases
 *.sqlite
 *.db
