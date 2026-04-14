@@ -1,0 +1,5 @@
+modelo,precision,recall,TN,FP,FN,TP
+RF_sem_reducao_baseline,0.3893,0.4823,26478,1517,1038,967
+RF_com_PCA,0.3595,0.5382,26073,1922,926,1079
+RF_com_LDA,0.246,0.601,24301,3694,800,1205
+DT_sem_reducao_baseline,0.2211,0.7426,22751,5244,516,1489

@@ -26,6 +26,8 @@
 
 Este repositório representa o **PD2** da disciplina, transformando o trabalho exploratório do PD1 em um fluxo mais próximo de engenharia de machine learning: código modular, rastreamento de experimentos com `MLflow`, seleção de modelo campeão e inferência via `Streamlit`.
 
+Repositório desta entrega: [pd_operacionalizao_modelos_mlops](https://github.com/fabioffigueiredo/pd_operacionalizao_modelos_mlops)
+
 O problema continua sendo o mesmo: prever **inadimplência severa** (`SeriousDlqin2yrs`) no dataset **Give Me Some Credit**, com aproximadamente 150 mil registros e classe positiva em torno de 6,7%.
 
 O foco desta etapa não está apenas em métrica, mas em demonstrar:
@@ -54,22 +56,27 @@ Se você quiser reproduzir apenas o material legado em notebook do PD1, use as d
 ```text
 PD 2 MLops/
 ├── app/
-│   └── app.py
+│   └── app.py                      # Interface Streamlit de inferência
 ├── config/
-│   └── pipeline.yaml
+│   └── pipeline.yaml               # Configuração centralizada (fonte única de verdade)
 ├── data/
-│   └── raw/
-├── mlflow+streamlit_mlops.mp4
+│   └── raw/                        # Dataset cs-training.csv (não versionado)
+├── mlflow+streamlit_mlops.mp4      # Vídeo de demonstração
+├── mlruns/                         # Artefatos MLflow (gerado automaticamente)
 ├── models/
-├── pd-ml-scikit-learning-main/
+│   └── champion_run_id.txt         # run_id do modelo campeão
+├── pd-ml-scikit-learning-main/     # Material legado do PD1
 ├── reports/
-│   ├── relatorio_tecnico.md
-│   └── relatorio_tecnico.pdf
+│   ├── relatorio_tecnico.md        # Relatório técnico (fonte)
+│   ├── relatorio_tecnico.pdf       # Relatório técnico (renderizado)
+│   ├── metrics_extended.csv        # Precision, Recall e confusion matrix por modelo
+│   └── pca_loadings.csv            # Loadings das componentes PCA
 ├── scripts/
-│   └── render_relatorio_pdf.py
+│   ├── extract_metrics.py          # Extrai métricas dos modelos salvos no MLflow
+│   └── render_relatorio_pdf.py     # Gera o PDF a partir do Markdown
 ├── src/
-│   ├── data_processing.py
-│   └── train.py
+│   ├── data_processing.py          # Ingestão, outlier capping e preprocessor factory
+│   └── train.py                    # Orquestração dos 4 experimentos MLflow
 ├── requirements.txt
 └── README.md
 ```
@@ -78,14 +85,14 @@ PD 2 MLops/
 
 ## Resultados Principais
 
-| Experimento | Redução | F1-Score | ROC-AUC | Observação |
-|---|---|---:|---:|---|
-| `RF_com_PCA` | PCA (9 componentes) | **0.4354** | 0.8555 | Campeão factual carregado no app |
-| `RF_sem_reducao_baseline` | Nenhuma | 0.4308 | **0.8572** | Melhor interpretabilidade |
-| `RF_com_LDA` | LDA (1 componente) | 0.3494 | 0.8156 | Perda forte de informação |
-| `DT_sem_reducao_baseline` | Nenhuma | 0.3408 | 0.8544 | Regras auditáveis, menor F1 |
+| Experimento | Redução | Precision | Recall | F1-Score | ROC-AUC | Observação |
+|---|---|---:|---:|---:|---:|---|
+| `RF_com_PCA` ⭐ | PCA (9 componentes) | 0.3595 | **0.5382** | **0.4354** | 0.8555 | Campeão — maior F1 e Recall |
+| `RF_sem_reducao_baseline` | Nenhuma | **0.3893** | 0.4823 | 0.4308 | **0.8572** | Maior Precision, melhor interpretabilidade |
+| `RF_com_LDA` | LDA (1 componente) | 0.2460 | 0.6010 | 0.3494 | 0.8156 | Perda forte de informação |
+| `DT_sem_reducao_baseline` | Nenhuma | 0.2211 | 0.7426 | 0.3408 | 0.8544 | Maior Recall, muitos falsos alarmes |
 
-**Leitura de engenharia:** o `RF + PCA` venceu pela métrica primária, mas o `RF baseline` continua tecnicamente defensável quando a prioridade é interpretabilidade em contexto regulado.
+**Leitura de engenharia:** o `RF + PCA` venceu pela métrica primária (F1) e detecta mais inadimplentes (Recall 53,8%). O `RF baseline` tem a maior Precision — menos recusas indevidas — e continua tecnicamente defensável em contexto regulado onde interpretabilidade é prioritária.
 
 ---
 
@@ -155,6 +162,7 @@ O `Streamlit` lê o `run_id` campeão salvo e carrega o modelo correspondente do
 - Relatório técnico em Markdown e PDF:
   - [Relatório Técnico em PDF](reports/relatorio_tecnico.pdf)
   - [Relatório Técnico em Markdown](reports/relatorio_tecnico.md)
+  - Repositório no GitHub: [pd_operacionalizao_modelos_mlops](https://github.com/fabioffigueiredo/pd_operacionalizao_modelos_mlops)
 
 ---
 

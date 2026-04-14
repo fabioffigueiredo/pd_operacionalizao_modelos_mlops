@@ -42,7 +42,7 @@ LOCAL_ARTIFACTS_DIR = PROJECT_ROOT / ".render_tmp" / "reports"
 REPORT_HTML = LOCAL_ARTIFACTS_DIR / "relatorio_tecnico_print.html"
 REPORT_PDF = PROJECT_ROOT / "reports" / "relatorio_tecnico.pdf"
 LOGO_PATH = PROJECT_ROOT / "pd-ml-scikit-learning-main" / "images" / "logo_infnet.png"
-REPO_URL = "https://github.com/fabioffigueiredo/pd_operacionaliza-o_modelos-_mlops"
+REPO_URL = "https://github.com/fabioffigueiredo/pd_operacionalizao_modelos_mlops"
 VIDEO_DRIVE_URL = "https://drive.google.com/file/d/11Yn6D01kEwuc6N-__t40ZlxxyOoEa-uM/view?usp=sharing"
 
 

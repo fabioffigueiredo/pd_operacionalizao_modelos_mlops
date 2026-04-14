@@ -5,6 +5,7 @@
 **Professor:** Ícaro Augusto Maccari Zelioli
 **Aluno:** Fabio Ferreira Figueiredo
 **Data:** Abril de 2026
+**Repositório:** <https://github.com/fabioffigueiredo/pd_operacionalizao_modelos_mlops>
 
 ---
 
@@ -132,17 +133,46 @@ Foram testadas duas técnicas com características complementares: **PCA** (não
 
 #### 2.2.4 Comparativo: Com vs. Sem Redução
 
-| Experimento | Redução | F1-Score (teste) | ROC-AUC | Interpretabilidade | Treino |
-|-------------|---------|-----------------|---------|-------------------|--------|
-| **RF + PCA** | 9 de 10 componentes (~95% var.) | **0.4354** | 0.8555 | Baixa (componentes latentes) | 24.7 min |
-| RF Baseline | Nenhuma | 0.4308 | 0.8572 | Alta (feature importances diretas) | 19.4 min |
-| RF + LDA | 1 componente | 0.3494 | 0.8156 | Média (1 eixo interpretável) | 14.9 min |
-| DT Baseline | Nenhuma | 0.3408 | 0.8544 | Muito Alta (regras auditáveis) | 45 seg |
+| Experimento | Redução | Precision | Recall | F1-Score | ROC-AUC | Interpretabilidade | Treino |
+|-------------|---------|-----------|--------|----------|---------|-------------------|--------|
+| **RF + PCA** ⭐ | 9 de 10 componentes (~95% var.) | 0.3595 | **0.5382** | **0.4354** | 0.8555 | Baixa (componentes latentes) | 24.7 min |
+| RF Baseline | Nenhuma | **0.3893** | 0.4823 | 0.4308 | **0.8572** | Alta (feature importances diretas) | 19.4 min |
+| RF + LDA | 1 componente | 0.2460 | 0.6010 | 0.3494 | 0.8156 | Média (1 eixo interpretável) | 14.9 min |
+| DT Baseline | Nenhuma | 0.2211 | 0.7426 | 0.3408 | 0.8544 | Muito Alta (regras auditáveis) | 45 seg |
+
+> **Leitura dos trade-offs:** O modelo campeão (RF+PCA) tem o maior F1 porque equilibra melhor Precision e Recall. O DT tem o maior Recall (detecta 74% dos inadimplentes), mas ao custo de Precision baixíssima (muitos falsos alarmes). O RF Baseline tem a maior Precision (menos falsos positivos) com Recall razoável. LDA e DT são estratégias de "jogar a rede larga" — acertam mais inadimplentes, mas oneram mais bons pagadores com recusas indevidas.
 
 **Análise da distribuição de variância (PCA):**
 Com o capping adequado de outliers aplicado, as features passaram a ter distribuição de variância quase uniforme:
 PC1=21%, PC2=17%, PC3=13%, PC4=11%, PC5=8%, PC6=7%, PC7=7%, PC8=6%, PC9=6%, PC10=5%.
 São necessários **9 de 10 componentes** para atingir 95% da variância — evidência de que as features de crédito capturam aspectos ortogonais e independentes do comportamento financeiro.
+
+#### 2.2.5 PCA — Contribuição das Features por Componente (Loadings)
+
+A tabela abaixo mostra os coeficientes (loadings) de cada feature nos três primeiros componentes principais. Valores com módulo alto indicam maior influência na direção daquele componente. Sinal positivo e negativo refletem a orientação da contribuição.
+
+| Feature | PC1 (21%) | PC2 (17%) | PC3 (13%) |
+|---|---|---|---|
+| `RevolvingUtilizationOfUnsecuredLines` | **+0.438** | +0.125 | +0.119 |
+| `NumberOfTimes90DaysLate` | **+0.447** | +0.164 | -0.194 |
+| `NumberOfTime30-59DaysPastDueNotWorse` | **+0.363** | +0.331 | -0.237 |
+| `NumberOfTime60-89DaysPastDueNotWorse` | **+0.412** | +0.238 | -0.261 |
+| `age` | -0.288 | -0.066 | **-0.474** |
+| `NumberOfOpenCreditLinesAndLoans` | -0.305 | **+0.458** | -0.169 |
+| `MonthlyIncome` | -0.227 | **+0.430** | +0.219 |
+| `NumberRealEstateLoansOrLines` | -0.265 | **+0.527** | -0.080 |
+| `DebtRatio` | -0.085 | +0.072 | **-0.451** |
+| `NumberOfDependents` | +0.054 | +0.330 | **+0.559** |
+
+**Interpretação dos componentes:**
+
+- **PC1 — "Risco de Atraso":** Concentra os quatro indicadores de inadimplência histórica (`RevolvingUtilization`, `90DaysLate`, `30-59Days`, `60-89Days`). Features de capacidade financeira (`MonthlyIncome`, `OpenCreditLines`) têm sinal negativo — quanto mais riqueza, menor o score neste componente.
+
+- **PC2 — "Capacidade de Crédito":** Agrupa features de patrimônio e renda (`RealEstateLoans`, `OpenCreditLines`, `MonthlyIncome`, `Dependents`). Captura a dimensão "volume de crédito já obtido" — independente do comportamento de pagamento.
+
+- **PC3 — "Perfil Demográfico":** Dominado por `NumberOfDependents` (+) e `age` (−), com alguma contribuição de `DebtRatio`. Separa clientes mais jovens com muitos dependentes daqueles mais experientes e com dívidas menores.
+
+> Esta decomposição confirma por que o PCA precisou de 9 componentes: cada componente captura uma **dimensão genuinamente diferente** do comportamento financeiro, e eliminar qualquer um deles representa perda de informação preditiva.
 
 ---
 
@@ -232,10 +262,25 @@ O carregamento usa `@st.cache_resource` para carregar o modelo uma única vez po
 
 | Tipo de Erro | Predição | Realidade | Impacto |
 |--------------|----------|-----------|---------|
-| Falso Negativo | Adimplente | Inadimplente | Aprovação de crédito para quem vai inadimplir → perda financeira direta |
-| Falso Positivo | Inadimplente | Adimplente | Recusa de crédito a bom pagador → perda de receita, risco reputacional |
+| Falso Negativo (FN) | Adimplente | Inadimplente | Aprovação de crédito para quem vai inadimplir → perda financeira direta |
+| Falso Positivo (FP) | Inadimplente | Adimplente | Recusa de crédito a bom pagador → perda de receita, risco reputacional |
 
-**Assimetria de custo:** Em crédito, o Falso Negativo tipicamente tem custo maior que o Falso Positivo. O F1-Score trata os dois igualmente — em produção, seria apropriado ponderar pelo custo relativo de cada erro e ajustar o threshold de decisão da probabilidade (padrão: 0.5).
+**Matrizes de confusão — conjunto de teste (30.000 registros, 2.005 inadimplentes reais / 6,7%):**
+
+| Modelo | TN (acerto neg.) | FP (falso alarme) | FN (falha crítica) | TP (acerto pos.) | Recall Inadimp. | Precision Inadimp. |
+|---|---|---|---|---|---|---|
+| **RF + PCA ⭐** | 26.073 | 1.922 | **926** | 1.079 | **53,8%** | 36,0% |
+| RF Baseline | 26.478 | 1.517 | 1.038 | 967 | 48,2% | **38,9%** |
+| RF + LDA | 24.301 | 3.694 | 800 | 1.205 | 60,1% | 24,6% |
+| DT Baseline | 22.751 | 5.244 | 516 | 1.489 | 74,3% | 22,1% |
+
+**Leitura de negócio:**
+
+- O campeão **RF+PCA detectou 1.079 dos 2.005 inadimplentes** (53,8%) ao custo de 1.922 recusas indevidas a bons pagadores.
+- O **RF Baseline é o mais preciso**: de cada 10 "REPROVADO" emitidos, quase 4 (38,9%) são realmente inadimplentes — o menor desperdício de recusas indevidas.
+- O **DT é o mais sensível**: detecta 74,3% dos inadimplentes, mas gera 5.244 falsos alarmes — para cada inadimplente detectado, há 3,5 bons pagadores recusados injustamente.
+
+**Assimetria de custo e ajuste de threshold:** O F1-Score trata FN e FP igualmente. Em produção, o threshold de 0.5 pode ser ajustado: reduzir para 0.35 aumenta o Recall (captura mais inadimplentes ao custo de mais FP); elevar para 0.65 aumenta a Precision (menos recusas indevidas, mas mais aprovações de risco). A decisão é do gestor de risco, não do modelo.
 
 ### 4.4 Métricas Técnicas Monitoradas
 
